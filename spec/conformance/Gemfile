@@ -4,7 +4,6 @@ source "https://rubygems.org"
 
 ruby file: '.ruby-version'
 
-gem "byebug"
 gem "fido_metadata", "~> 0.5.0"
 gem "puma", "~> 6.6"
 gem "rack-contrib"

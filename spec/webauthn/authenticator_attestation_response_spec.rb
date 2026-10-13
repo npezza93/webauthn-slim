@@ -94,7 +94,7 @@ RSpec.describe WebAuthn::AuthenticatorAttestationResponse do
       it "returns the credential" do
         credential = attestation_response.credential
 
-        expect(credential.id.class).to eq(BinData::String)
+        expect(credential.id.class).to eq(String)
         expect(credential.id.encoding).to eq(Encoding::BINARY)
         expect(credential.public_key.class).to eq(String)
         expect(credential.public_key.encoding).to be(Encoding::BINARY)
@@ -125,7 +125,7 @@ RSpec.describe WebAuthn::AuthenticatorAttestationResponse do
         it "returns the credential" do
           credential = attestation_response.credential
 
-          expect(credential.id.class).to eq(BinData::String)
+          expect(credential.id.class).to eq(String)
           expect(credential.id.encoding).to eq(Encoding::BINARY)
           expect(credential.public_key.class).to eq(String)
           expect(credential.public_key.encoding).to be(Encoding::BINARY)
@@ -144,7 +144,7 @@ RSpec.describe WebAuthn::AuthenticatorAttestationResponse do
         it "returns the credential" do
           credential = attestation_response.credential
 
-          expect(credential.id.class).to eq(BinData::String)
+          expect(credential.id.class).to eq(String)
           expect(credential.id.encoding).to eq(Encoding::BINARY)
           expect(credential.public_key.class).to eq(String)
           expect(credential.public_key.encoding).to be(Encoding::BINARY)
@@ -306,191 +306,6 @@ RSpec.describe WebAuthn::AuthenticatorAttestationResponse do
     end
   end
 
-  context "when TPM attestation" do
-    let(:origin) { seeds[:tpm][:origin] }
-    let(:time) { Time.utc(2019, 8, 13, 22, 6) }
-    let(:challenge) do
-      WebAuthn::Encoders::Base64UrlEncoder.decode(seeds[:tpm][:credential_creation_options][:challenge])
-    end
-
-    let(:attestation_response) do
-      response = seeds[:tpm][:authenticator_attestation_response]
-
-      WebAuthn::AuthenticatorAttestationResponse.new(
-        attestation_object: WebAuthn::Encoders::Base64UrlEncoder.decode(response[:attestation_object]),
-        client_data_json: WebAuthn::Encoders::Base64UrlEncoder.decode(response[:client_data_json])
-      )
-    end
-
-    before do
-      WebAuthn.configuration.allowed_origins = [origin]
-      WebAuthn.configure do |config|
-        config.algorithms.concat(%w(RS1))
-      end
-
-      # TODO: Reinstate when testing TPM certs configuration
-      #
-      # WebAuthn.configuration.attestation_root_certificates_finders =
-      #   finder_for('microsoft_tpm_root_certificate_authority_2014.cer')
-
-      # allow(attestation_response.attestation_statement).to receive(:time).and_return(time)
-      # allow(attestation_response).to receive(:attestation_root_certificates_store).and_wrap_original do |m, *args|
-      #   store = m.call(*args)
-      #   store.time = time
-      #   store
-      # end
-    end
-
-    it_behaves_like "a valid attestation response"
-
-    it "returns attestation info" do
-      attestation_response.valid?(challenge, WebAuthn.configuration.allowed_origins)
-
-      expect(attestation_response.attestation_type).to eq("AttCA")
-      expect(attestation_response.attestation_trust_path).to all(be_kind_of(OpenSSL::X509::Certificate))
-    end
-
-    it "returns credential" do
-      expect(attestation_response.credential.id.length).to be >= 16
-    end
-
-    it "returns the AAGUID" do
-      expect(attestation_response.aaguid).to eq("08987058-cadc-4b81-b6e1-30de50dcbe96")
-    end
-  end
-
-  context "when android-safetynet attestation" do
-    let(:time) { Time.utc(2019, 7, 7, 16, 15, 11) }
-
-    let(:origin) { "https://7f41ac45.ngrok.io" }
-
-    let(:original_challenge) do
-      WebAuthn::Encoders::Base64Encoder.decode(
-        seeds[:android_safetynet_direct][:credential_creation_options][:challenge]
-      )
-    end
-
-    let(:attestation_response) do
-      response = seeds[:android_safetynet_direct][:authenticator_attestation_response]
-
-      WebAuthn::AuthenticatorAttestationResponse.new(
-        attestation_object: WebAuthn::Encoders::Base64Encoder.decode(response[:attestation_object]),
-        client_data_json: WebAuthn::Encoders::Base64Encoder.decode(response[:client_data_json])
-      )
-    end
-
-    before do
-      WebAuthn.configuration.allowed_origins = [origin]
-      allow(attestation_response.attestation_statement).to receive(:time).and_return(time)
-    end
-
-    it_behaves_like "a valid attestation response"
-
-    it "returns attestation info" do
-      attestation_response.valid?(original_challenge)
-
-      expect(attestation_response.attestation_type).to eq("Basic")
-      expect(attestation_response.attestation_trust_path).to all(be_kind_of(OpenSSL::X509::Certificate))
-    end
-
-    it "returns the credential" do
-      expect(attestation_response.credential.id.length).to be >= 16
-    end
-
-    it "returns the AAGUID" do
-      expect(attestation_response.aaguid).to eq("b93fd961-f2e6-462f-b122-82002247de78")
-    end
-  end
-
-  context "when android-key attestation" do
-    let(:original_challenge) do
-      WebAuthn::Encoders::Base64UrlEncoder.decode(seeds[:android_key_direct][:credential_creation_options][:challenge])
-    end
-
-    let(:attestation_response) do
-      response = seeds[:android_key_direct][:authenticator_attestation_response]
-
-      WebAuthn::AuthenticatorAttestationResponse.new(
-        attestation_object: WebAuthn::Encoders::Base64UrlEncoder.decode(response[:attestation_object]),
-        client_data_json: WebAuthn::Encoders::Base64UrlEncoder.decode(response[:client_data_json])
-      )
-    end
-
-    before do
-      WebAuthn.configuration.attestation_root_certificates_finders = finder_for('android_key_root.pem')
-    end
-
-    context "when there is a single origin" do
-      let(:origin) { seeds[:android_key_direct][:origin] }
-
-      before do
-        WebAuthn.configuration.allowed_origins = [origin]
-      end
-
-      it_behaves_like "a valid attestation response"
-
-      it "returns attestation info" do
-        attestation_response.valid?(original_challenge)
-
-        expect(attestation_response.attestation_type).to eq("Basic")
-        expect(attestation_response.attestation_trust_path).to all(be_kind_of(OpenSSL::X509::Certificate))
-      end
-
-      it "returns the credential" do
-        expect(attestation_response.credential.id.length).to be >= 16
-      end
-
-      it "returns the AAGUID" do
-        expect(attestation_response.aaguid).to eq("550e4b54-aa47-409f-9a95-1ab76c130131")
-      end
-    end
-
-    context "when there are multiple allowed origins" do
-      let(:allowed_origins) do
-        [
-          seeds[:android_key_direct][:origin],
-          "android:apk-key-hash:blablablablablalblalla",
-          "localhost"
-        ]
-      end
-
-      before do
-        WebAuthn.configuration.allowed_origins = allowed_origins
-      end
-
-      context "when rp_id is set explicitly" do
-        before do
-          WebAuthn.configuration.rp_id = "localhost"
-        end
-
-        it_behaves_like "a valid attestation response"
-
-        it "returns attestation info" do
-          attestation_response.valid?(original_challenge)
-
-          expect(attestation_response.attestation_type).to eq("Basic")
-          expect(attestation_response.attestation_trust_path).to all(be_kind_of(OpenSSL::X509::Certificate))
-        end
-
-        it "returns the credential" do
-          expect(attestation_response.credential.id.length).to be >= 16
-        end
-
-        it "returns the AAGUID" do
-          expect(attestation_response.aaguid).to eq("550e4b54-aa47-409f-9a95-1ab76c130131")
-        end
-      end
-
-      context "when rp_id is not set explicitly" do
-        before do
-          WebAuthn.configuration.rp_id = nil
-        end
-
-        it_behaves_like "an invalid attestation response that raises", WebAuthn::RpIdVerificationError
-      end
-    end
-  end
-
   context "when apple attestation" do
     let(:origin) { seeds[:macbook_touch_id][:origin] }
 
@@ -512,7 +327,7 @@ RSpec.describe WebAuthn::AuthenticatorAttestationResponse do
 
       # Apple credential certificate expires after 3 days apparently.
       # Seed data was obtained 22nd Feb 2021, so we are simulating validation within that 3 day timeframe
-      fake_certificate_chain_validation_time(attestation_response.attestation_statement, Time.parse("2021-02-23"))
+      fake_certificate_chain_validation_time(attestation_response.attestation_statement, Time.utc(2021, 2, 23))
     end
 
     it_behaves_like "a valid attestation response"

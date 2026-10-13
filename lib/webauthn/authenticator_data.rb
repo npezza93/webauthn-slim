@@ -1,43 +1,33 @@
 # frozen_string_literal: true
 
-require "bindata"
+require "webauthn/cbor"
 require "webauthn/authenticator_data/attested_credential_data"
 require "webauthn/error"
 
 module WebAuthn
   class AuthenticatorDataFormatError < WebAuthn::Error; end
 
-  class AuthenticatorData < BinData::Record
+  class AuthenticatorData
     RP_ID_HASH_LENGTH = 32
     FLAGS_LENGTH = 1
     SIGN_COUNT_LENGTH = 4
 
-    endian :big
-
-    count_bytes_remaining :data_length
-    string :rp_id_hash, length: RP_ID_HASH_LENGTH
-    struct :flags do
-      bit1 :extension_data_included
-      bit1 :attested_credential_data_included
-      bit1 :reserved_for_future_use_2
-      bit1 :backup_state
-      bit1 :backup_eligibility
-      bit1 :user_verified
-      bit1 :reserved_for_future_use_1
-      bit1 :user_present
-    end
-    bit32 :sign_count
-    count_bytes_remaining :trailing_bytes_length
-    string :trailing_bytes, length: :trailing_bytes_length
+    attr_reader :data, :rp_id_hash, :flags, :sign_count, :trailing_bytes
 
     def self.deserialize(data)
-      read(data)
-    rescue EOFError
-      raise AuthenticatorDataFormatError
+      new(data)
     end
 
-    def data
-      to_binary_s
+    def initialize(data)
+      unless data.is_a?(String) && data.bytesize >= base_length
+        raise AuthenticatorDataFormatError
+      end
+
+      @data = data.b.freeze
+      @rp_id_hash = @data.byteslice(0, RP_ID_HASH_LENGTH)
+      @flags = @data.getbyte(RP_ID_HASH_LENGTH)
+      @sign_count = @data.byteslice(RP_ID_HASH_LENGTH + FLAGS_LENGTH, SIGN_COUNT_LENGTH).unpack1("N")
+      @trailing_bytes = @data.byteslice(base_length..-1)
     end
 
     def valid?
@@ -51,27 +41,27 @@ module WebAuthn
     end
 
     def user_present?
-      flags.user_present == 1
+      (flags & 0x1) != 0
     end
 
     def user_verified?
-      flags.user_verified == 1
+      (flags & 0x4) != 0
     end
 
     def credential_backup_eligible?
-      flags.backup_eligibility == 1
+      (flags & 0x8) != 0
     end
 
     def credential_backed_up?
-      flags.backup_state == 1
+      (flags & 0x10) != 0
     end
 
     def attested_credential_data_included?
-      flags.attested_credential_data_included == 1
+      (flags & 0x40) != 0
     end
 
     def extension_data_included?
-      flags.extension_data_included == 1
+      (flags & 0x80) != 0
     end
 
     def credential
@@ -89,6 +79,8 @@ module WebAuthn
 
     def extension_data
       @extension_data ||= CBOR.decode(raw_extension_data)
+    rescue CBOR::MalformedData
+      raise AuthenticatorDataFormatError
     end
 
     def aaguid
@@ -102,7 +94,7 @@ module WebAuthn
     private
 
     def valid_length?
-      data_length == base_length + attested_credential_data_length + extension_data_length
+      data.bytesize == base_length + attested_credential_data_length + extension_data_length
     end
 
     def raw_extension_data
@@ -110,7 +102,7 @@ module WebAuthn
         if attested_credential_data_included?
           trailing_bytes[attested_credential_data.length..-1]
         else
-          trailing_bytes.snapshot
+          trailing_bytes
         end
       end
     end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "cbor"
+require "webauthn/cbor"
 require "forwardable"
 require "openssl"
 require "webauthn/attestation_statement"

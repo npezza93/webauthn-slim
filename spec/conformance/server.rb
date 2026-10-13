@@ -5,14 +5,12 @@ require "webauthn"
 require "sinatra"
 require "rack/contrib"
 require "sinatra/cookies"
-require "byebug"
 
 use Rack::PostBodyContentTypeParser
 set show_exceptions: false
 
 require_relative 'mds_finder'
 require_relative 'conformance_cache_store'
-require_relative "conformance_patches"
 
 RP_NAME = "webauthn-ruby #{WebAuthn::VERSION} conformance test server"
 

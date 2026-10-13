@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require "cose/algorithm"
-require "cose/key/ec2"
+require "webauthn/cose"
 require "webauthn/attestation_statement/base"
 
 module WebAuthn

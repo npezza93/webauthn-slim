@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require "cose/algorithm"
-require "cose/error"
-require "cose/rsapkcs1_algorithm"
+require "webauthn/cose"
 require "openssl"
 require "webauthn/authenticator_data/attested_credential_data"
 require "webauthn/error"

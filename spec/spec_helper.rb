@@ -2,9 +2,8 @@
 
 require "bundler/setup"
 require "webauthn"
-require "cbor"
+require "webauthn/cbor"
 
-require "byebug"
 require "webauthn/fake_client"
 
 RSpec.configure do |config|
@@ -74,7 +73,7 @@ end
 def fake_cose_credential_key(algorithm: -7, x_coordinate: nil, y_coordinate: nil)
   crv_p256 = 1
 
-  COSE::Key::EC2.new(
+  WebAuthn::COSE::Key::EC2.new(
     alg: algorithm,
     crv: crv_p256,
     x: x_coordinate || SecureRandom.random_bytes(32),

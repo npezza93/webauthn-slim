@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "cbor"
+require "webauthn/cbor"
 require "webauthn/fake_authenticator/authenticator_data"
 
 module WebAuthn

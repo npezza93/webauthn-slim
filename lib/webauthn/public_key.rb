@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
-require "cose/algorithm"
-require "cose/error"
-require "cose/key"
-require "cose/rsapkcs1_algorithm"
+require "webauthn/cose"
 require "webauthn/attestation_statement/fido_u2f/public_key"
 
 module WebAuthn

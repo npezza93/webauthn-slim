@@ -4,7 +4,7 @@ require "spec_helper"
 
 require "webauthn/public_key"
 require "support/seeds"
-require "cose"
+require "webauthn/cose"
 require "openssl"
 
 RSpec.describe "PublicKey" do
@@ -23,7 +23,7 @@ RSpec.describe "PublicKey" do
       let(:public_key) { 'invalidinvalid' }
 
       it "should fail" do
-        expect { webauthn_public_key }.to raise_error(COSE::MalformedKeyError)
+        expect { webauthn_public_key }.to raise_error(WebAuthn::COSE::MalformedKeyError)
       end
     end
   end
@@ -55,7 +55,7 @@ RSpec.describe "PublicKey" do
       let(:public_key) { uncompressed_point_public_key }
 
       it "should return EC2 cose key" do
-        expect(cose_key).to be_instance_of(COSE::Key::EC2)
+        expect(cose_key).to be_instance_of(WebAuthn::COSE::Key::EC2)
       end
     end
 
@@ -63,7 +63,7 @@ RSpec.describe "PublicKey" do
       let(:public_key) { cose_public_key }
 
       it "should return cose key" do
-        expect(cose_key).to be_a(COSE::Key::Base)
+        expect(cose_key).to be_a(WebAuthn::COSE::Key::Base)
       end
     end
   end
@@ -75,7 +75,7 @@ RSpec.describe "PublicKey" do
       let(:public_key) { uncompressed_point_public_key }
 
       it "should return ES256 cose algorithm id" do
-        expect(alg).to eq(COSE::Algorithm.by_name("ES256").id)
+        expect(alg).to eq(WebAuthn::COSE::Algorithm.by_name("ES256").id)
       end
     end
 
@@ -118,10 +118,10 @@ RSpec.describe "PublicKey" do
       let(:signature) { key.sign(hash_algorithm, to_be_signed) }
       let(:to_be_signed) { "data" }
       let(:hash_algorithm) do
-        COSE::Algorithm.find("ES256").hash_function
+        WebAuthn::COSE::Algorithm.find("ES256").hash_function
       end
       let(:cose_key) do
-        cose_key = COSE::Key::EC2.from_pkey(key.public_key)
+        cose_key = WebAuthn::COSE::Key::EC2.from_pkey(key.public_key)
         cose_key.alg = -7
 
         cose_key
@@ -164,7 +164,7 @@ RSpec.describe "PublicKey" do
 
       context "when public key algorithm is not in COSE" do
         let(:cose_key) do
-          cose_key = COSE::Key::EC2.from_pkey(key.public_key)
+          cose_key = WebAuthn::COSE::Key::EC2.from_pkey(key.public_key)
           cose_key.alg = -1
 
           cose_key

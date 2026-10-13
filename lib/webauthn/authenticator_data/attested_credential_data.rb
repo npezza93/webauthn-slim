@@ -1,26 +1,20 @@
 # frozen_string_literal: true
 
-require "bindata"
-require "cose/key"
+require "webauthn/cbor"
+require "webauthn/cose"
 require "webauthn/error"
 
 module WebAuthn
   class AttestedCredentialDataFormatError < WebAuthn::Error; end
 
-  class AuthenticatorData < BinData::Record
-    class AttestedCredentialData < BinData::Record
+  class AuthenticatorData
+    class AttestedCredentialData
       AAGUID_LENGTH = 16
       ZEROED_AAGUID = 0.chr * AAGUID_LENGTH
 
       ID_LENGTH_LENGTH = 2
 
-      endian :big
-
-      string :raw_aaguid, length: AAGUID_LENGTH
-      bit16 :id_length
-      string :id, read_length: :id_length
-      count_bytes_remaining :trailing_bytes_length
-      string :trailing_bytes, length: :trailing_bytes_length
+      attr_reader :raw_aaguid, :id_length, :id, :trailing_bytes
 
       Credential =
         Struct.new(:id, :public_key, :algorithm, keyword_init: true) do
@@ -30,9 +24,24 @@ module WebAuthn
         end
 
       def self.deserialize(data)
-        read(data)
-      rescue EOFError
-        raise AttestedCredentialDataFormatError
+        new(data)
+      end
+
+      def initialize(data)
+        header_length = AAGUID_LENGTH + ID_LENGTH_LENGTH
+        unless data.is_a?(String) && data.bytesize >= header_length
+          raise AttestedCredentialDataFormatError
+        end
+
+        data = data.b
+        @raw_aaguid = data.byteslice(0, AAGUID_LENGTH)
+        @id_length = data.byteslice(AAGUID_LENGTH, ID_LENGTH_LENGTH).unpack1("n")
+        if data.bytesize < header_length + id_length
+          raise AttestedCredentialDataFormatError
+        end
+
+        @id = data.byteslice(header_length, id_length)
+        @trailing_bytes = data.byteslice(header_length + id_length..-1)
       end
 
       def valid?
@@ -59,7 +68,7 @@ module WebAuthn
       private
 
       def algorithm
-        COSE::Algorithm.find(cose_key.alg).name
+        COSE::Algorithm.find(cose_key.alg)&.name
       end
 
       def valid_credential_public_key?
@@ -76,7 +85,9 @@ module WebAuthn
 
       def public_key_length
         @public_key_length ||=
-          CBOR.encode(CBOR::Unpacker.new(StringIO.new(trailing_bytes)).each.first).length
+          CBOR.decode_first(trailing_bytes).last
+      rescue CBOR::MalformedData
+        raise AttestedCredentialDataFormatError
       end
     end
   end

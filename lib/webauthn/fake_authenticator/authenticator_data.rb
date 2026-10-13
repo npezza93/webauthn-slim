@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "cose/key"
-require "cbor"
+require "webauthn/cose"
+require "webauthn/cbor"
 require "securerandom"
 
 module WebAuthn

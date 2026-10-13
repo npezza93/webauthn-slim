@@ -2,7 +2,6 @@
 
 require "spec_helper"
 require "support/seeds"
-require "byebug"
 
 require "webauthn/u2f_migrator"
 
@@ -26,7 +25,7 @@ RSpec.describe WebAuthn::U2fMigrator do
   end
 
   it "returns the credential public key in COSE format" do
-    public_key = COSE::Key.deserialize(u2f_migrator.credential.public_key)
+    public_key = WebAuthn::COSE::Key.deserialize(u2f_migrator.credential.public_key)
 
     expect(public_key.alg).to eq(-7)
     expect(public_key.crv).to eq(1)

@@ -23,6 +23,35 @@ RSpec.describe WebAuthn::AuthenticatorData do
 
   let(:authenticator_data) { described_class.deserialize(serialized_authenticator_data) }
 
+  describe ".deserialize" do
+    it "rejects every truncated fixed header" do
+      (0...37).each do |length|
+        expect { described_class.deserialize(serialized_authenticator_data.byteslice(0, length)) }
+          .to raise_error(WebAuthn::AuthenticatorDataFormatError)
+      end
+    end
+
+    it "keeps non-minimal key encodings separate from extension data" do
+      key = fake_cose_credential_key
+      # Encode the map size using an extra byte, a valid but non-minimal CBOR encoding.
+      key = "\xb8\x05".b + key.byteslice(1..-1)
+      extensions = { "example" => true }
+      data = rp_id_hash + [0xc1, 42].pack("CN") + "\x00".b * 16 + [2].pack("n") +
+             "id" + key + WebAuthn::CBOR.encode(extensions)
+      parsed = described_class.deserialize(data)
+
+      expect(parsed.valid?).to be_truthy
+      expect(parsed.credential.public_key).to eq(key)
+      expect(parsed.extension_data).to eq(extensions)
+      expect(parsed.data).to eq(data)
+    end
+
+    it "rejects trailing bytes after the extension map" do
+      expect { described_class.deserialize(serialized_authenticator_data + "\x00".b).valid? }
+        .to raise_error(WebAuthn::AuthenticatorDataFormatError)
+    end
+  end
+
   describe "#valid?" do
     it "returns true" do
       expect(authenticator_data.valid?).to be_truthy
@@ -37,7 +66,7 @@ RSpec.describe WebAuthn::AuthenticatorData do
         extensions: nil
       ).serialize
 
-      authenticator_data = WebAuthn::AuthenticatorData.deserialize(data + CBOR.encode("k" => "v"))
+      authenticator_data = WebAuthn::AuthenticatorData.deserialize(data + WebAuthn::CBOR.encode("k" => "v"))
 
       expect(authenticator_data.valid?).to be_falsy
     end

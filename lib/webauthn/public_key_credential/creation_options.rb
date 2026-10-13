@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "cose/algorithm"
+require "webauthn/cose"
 require "webauthn/public_key_credential/options"
 require "webauthn/public_key_credential/rp_entity"
 require "webauthn/public_key_credential/user_entity"

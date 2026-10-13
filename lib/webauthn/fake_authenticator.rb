@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "cbor"
+require "webauthn/cbor"
 require "openssl"
 require "securerandom"
 require "webauthn/fake_authenticator/attestation_object"

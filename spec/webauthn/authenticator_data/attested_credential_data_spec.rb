@@ -16,14 +16,26 @@ RSpec.describe WebAuthn::AuthenticatorData::AttestedCredentialData do
   end
 
   describe "#valid?" do
+    it "rejects truncated AAGUID and credential ID length fields" do
+      (0...18).each do |length|
+        expect { described_class.deserialize("\x00".b * length) }
+          .to raise_error(WebAuthn::AttestedCredentialDataFormatError)
+      end
+    end
+
+    it "rejects a credential ID shorter than its declared length" do
+      expect { described_class.deserialize("\x00".b * 16 + [10].pack("n") + "id") }
+        .to raise_error(WebAuthn::AttestedCredentialDataFormatError)
+    end
+
     it "returns false if public key is missing" do
-      raw_data = raw_attested_credential_data(public_key: CBOR.encode(""))
+      raw_data = raw_attested_credential_data(public_key: WebAuthn::CBOR.encode(""))
 
       attested_credential_data =
         WebAuthn::AuthenticatorData::AttestedCredentialData.deserialize(raw_data)
 
-      expect { attested_credential_data.valid? }.to raise_error(COSE::UnknownKeyType)
-      expect { attested_credential_data.credential }.to raise_error(COSE::UnknownKeyType)
+      expect { attested_credential_data.valid? }.to raise_error(WebAuthn::COSE::UnknownKeyType)
+      expect { attested_credential_data.credential }.to raise_error(WebAuthn::COSE::UnknownKeyType)
     end
 
     it "returns false if public key doesn't contain the alg parameter" do

@@ -456,9 +456,6 @@ credential.authenticator_extension_outputs
 | -------- | :--------: |
 | packed (self attestation) | Yes |
 | packed (x5c attestation) | Yes |
-| tpm (x5c attestation) | Yes |
-| android-key | Yes |
-| android-safetynet | Yes |
 | apple | Yes |
 | fido-u2f | Yes |
 | none | Yes |

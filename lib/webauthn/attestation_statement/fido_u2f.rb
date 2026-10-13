@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "cose"
+require "webauthn/cose"
 require "openssl"
 require "webauthn/attestation_statement/base"
 require "webauthn/attestation_statement/fido_u2f/public_key"
