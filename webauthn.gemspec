@@ -5,21 +5,20 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "webauthn/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "webauthn"
+  spec.name          = "webauthn-slim"
   spec.version       = WebAuthn::VERSION
   spec.authors       = ["Gonzalo Rodriguez", "Braulio Martinez"]
   spec.email         = ["gonzalo@cedarcode.com", "braulio@cedarcode.com"]
 
   spec.summary       = "WebAuthn ruby server library"
-  spec.description   = 'WebAuthn ruby server library ― Make your application a W3C Web Authentication conformant
-    Relying Party and allow your users to authenticate with FIDO2/U2F authenticators as passkeys or security keys.'
-  spec.homepage      = "https://github.com/cedarcode/webauthn-ruby"
+  spec.description   = 'WebAuthn ruby server library ― Make your application a W3C Web Authentication conformant'
+  spec.homepage      = "https://github.com/npezza93/webauthn-slim"
   spec.license       = "MIT"
 
   spec.metadata = {
-    "bug_tracker_uri" => "https://github.com/cedarcode/webauthn-ruby/issues",
-    "changelog_uri" => "https://github.com/cedarcode/webauthn-ruby/blob/master/CHANGELOG.md",
-    "source_code_uri" => "https://github.com/cedarcode/webauthn-ruby"
+    "bug_tracker_uri" => "https://github.com/npezza93/webauthn-slim/issues",
+    "changelog_uri" => "https://github.com/npezza93/webauthn-slim/blob/master/CHANGELOG.md",
+    "source_code_uri" => "https://github.com/npezza93/webauthn-slim"
   }
 
   spec.files =
