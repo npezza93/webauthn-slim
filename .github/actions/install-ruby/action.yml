@@ -22,13 +22,20 @@ runs:
       if: steps.cache-ruby-restore.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        latest_patch=$(curl -s https://cache.ruby-lang.org/pub/ruby/${{ inputs.version }}/ \
-           | grep -oP "ruby-${{ inputs.version }}\.\d+\.tar\.xz" \
-           | grep -oP "\d+(?=\.tar\.xz)" \
-           | sort -V | tail -n 1)
-        wget https://cache.ruby-lang.org/pub/ruby/${{ inputs.version }}/ruby-${{ inputs.version }}.${latest_patch}.tar.xz
-        tar -xJvf ruby-${{ inputs.version }}.${latest_patch}.tar.xz
-        cd ruby-${{ inputs.version }}.${latest_patch}
+        ruby_version="${{ inputs.version }}"
+        if [[ "$ruby_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+          ruby_series="$ruby_version"
+          latest_patch=$(curl -fsS "https://cache.ruby-lang.org/pub/ruby/$ruby_series/" \
+             | grep -oE "ruby-$ruby_series\.[0-9]+\.tar\.xz" \
+             | sed -E 's/.*\.([0-9]+)\.tar\.xz/\1/' \
+             | sort -n | tail -n 1)
+          ruby_version="$ruby_series.$latest_patch"
+        else
+          ruby_series="${ruby_version%.*}"
+        fi
+        wget "https://cache.ruby-lang.org/pub/ruby/$ruby_series/ruby-$ruby_version.tar.xz"
+        tar -xJvf "ruby-$ruby_version.tar.xz"
+        cd "ruby-$ruby_version"
         ./configure --prefix=$HOME/rubies/ruby-${{ inputs.version }} --with-openssl-dir=$HOME/openssl
         make
         make install
@@ -36,22 +43,7 @@ runs:
     - name: Update PATH
       shell: bash
       run: |
-        echo "~/rubies/ruby-${{ inputs.version }}/bin" >> $GITHUB_PATH
-
-    - name: Install Bundler
-      shell: bash
-      run: |
-        case ${{ inputs.version }} in
-        2.7* | 3.*)
-          echo "Skipping Bundler installation for Ruby ${{ inputs.version }}"
-          ;;
-        2.5* | 2.6*)
-          gem install bundler -v '~> 2.3.0'
-          ;;
-        *)
-          echo "Don't know how to install Bundler for Ruby ${{ inputs.version }}"
-          ;;
-        esac
+        echo "$HOME/rubies/ruby-${{ inputs.version }}/bin" >> "$GITHUB_PATH"
 
     - name: Save Ruby installation cache
       if: steps.cache-ruby-restore.outputs.cache-hit != 'true'

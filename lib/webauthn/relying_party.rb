@@ -9,11 +9,7 @@ module WebAuthn
   class RootCertificateFinderNotSupportedError < Error; end
 
   class RelyingParty
-    DEFAULT_ALGORITHMS = ["ES256", "PS256", "RS256"].compact.freeze
-
-    def self.if_pss_supported(algorithm)
-      OpenSSL::PKey::RSA.instance_methods.include?(:verify_pss) ? algorithm : nil
-    end
+    DEFAULT_ALGORITHMS = ["ES256", "PS256", "RS256"].freeze
 
     def initialize(
       algorithms: DEFAULT_ALGORITHMS.dup,

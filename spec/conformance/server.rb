@@ -12,7 +12,7 @@ set show_exceptions: false
 require_relative 'mds_finder'
 require_relative 'conformance_cache_store'
 
-RP_NAME = "webauthn-ruby #{WebAuthn::VERSION} conformance test server"
+RP_NAME = "webauthn-ruby #{WebAuthn::VERSION} conformance test server".freeze
 
 UNACCEPTABLE_STATUSES = [
   "USER_VERIFICATION_BYPASS",
